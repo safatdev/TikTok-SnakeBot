@@ -13,6 +13,9 @@ Java - Processing for rendering/render server
 
 Like - Move forward | Comment - Move left | Share - Move right
 
+## Try the Bot here [Beware, it may be offline]
+https://www.tiktok.com/@souls46
+
 ---  
 Inspired by PolyMars' Twitter Plays Snake  
 Links:  
