@@ -21,3 +21,6 @@ Inspired by PolyMars' Twitter Plays Snake
 Links:  
 PolyMars: https://twitter.com/PolyMarsYT  
 TwitterBot: https://twitter.com/SnakeGameBot
+
+---
+Use of the code and modifications are encouraged, however and please refrain from self-hosting.
