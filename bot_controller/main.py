@@ -1,6 +1,7 @@
 
 # TikTok automation import
 import time
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -13,7 +14,7 @@ from moviepy.editor import *
 
 # other params
 chrome_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chromedriver.exe"
-channel_url = 'https://www.tiktok.com/@souls46?lang=en'
+channel_url = 'https://www.tiktok.com/@souls46'
 local_wait = 1
 wait_time = 600  # in seconds
 
@@ -29,6 +30,11 @@ render_server_info = ('127.0.0.1', 5124)
 # open renderer
 # java -cp "snake_render\snake_render.jar;snake_render\*;." snake_render
 
+
+# get current date time
+def get_current_time_str():
+    datetime_now = datetime.now()
+    return datetime_now.strftime("%H:%M:%S")
 
 # return a string such 100k to float
 def value_to_float(x):
@@ -76,7 +82,7 @@ def get_latest_vid_info(url):
                 driver.find_element_by_xpath("//strong[@data-e2e='share-count']").get_property('innerText'))
 
             stats = [likes, comments, shares]
-            print('retrieved stats', stats)
+            print(get_current_time_str() + ': retrieved stats', stats)
 
             # go back to google
             driver.get('https://www.google.com')
@@ -104,7 +110,7 @@ def upload_video(location, wait, cur_caption):
             # switches to upload frame
             driver.switch_to.frame(0)
 
-            upload_inp = driver.find_element_by_xpath("//input[contains(@class,'upload-btn-input')]")
+            upload_inp = driver.find_element_by_xpath("//input[@type='file']")
             upload_inp.send_keys(location)
 
             editor = driver.find_element_by_xpath("//div[contains(@class, 'public-DraftEditor-content')]")
@@ -121,7 +127,7 @@ def upload_video(location, wait, cur_caption):
             # switches back to main content
             driver.switch_to.default_content()
 
-            print('uploaded')
+            print(get_current_time_str() + ': Video uploaded')
 
             # go back to google
             driver.get('https://www.google.com')
@@ -218,35 +224,45 @@ def get_movement_from_info(info):
 #  2.2. save snake state to disk
 # loop
 
-# Create Game -> Initiate
-snake_game = Snake(10, 10)
-snake_game.start_game()
+# some functions
+# console render
+# snake_game.console_render()
 
-# Todo : Load from state
-# So that when Bot crashed, we can reset
+# delete previous image renders -> not needed at the moment
+# delete_images()
+
+# Snake Game -> Initialise
+# World X, World Y, State path
+snake_game = Snake(10, 10, path + r'\state.txt')
+
+# Start Game -> takes boolean to specify whether it will
+# True: load from state or
+# False: start a new game
+snake_game.start_game(True)
+
+# gets info first when launching program -> rather than uploading the current state
+ignore_upload = True
+
 
 # Main Game Loop
 while True:
 
-    # console render
-    # snake_game.console_render()
+    # fetch data first
+    if not ignore_upload:
 
-    # save state
-    snake_game.save_state(path + r'\state.txt')
+        # save state
+        snake_game.save_state()
 
-    # delete previous image renders -> not needed at the moment
-    # delete_images()
+        # generate images, based on state
+        if generate_images() is False:
+            input(get_current_time_str() + ': Waiting... Generate images failed')
 
-    # generate images, based on state
-    if generate_images() is False:
-        input('Waiting... Generate images failed')
+        # create video based on images
+        create_video(path + r'\video.mp4')
 
-    # create video based on images
-    create_video(path + r'\video.mp4')
-
-    # if can't retrieve info after 200 seconds
-    if upload_video(path + r'\video.mp4', 1, get_caption()) is False:
-        input('Waiting... Upload failed')
+        # if can't retrieve info after 200 seconds
+        if upload_video(path + r'\video.mp4', 1, get_caption()) is False:
+            input(get_current_time_str() + ': Waiting... Upload failed')
 
     # container for video interaction
     vid_info = [0, 0, 0]
@@ -254,19 +270,25 @@ while True:
     # if nobody has interacted, then keep waiting
     while True:
 
-        # check if there was an interaction -> if there was, stop waiting
-        if max(vid_info) > 0:
-            break
+        # don't wait if ignore upload is set to true
+        if not ignore_upload:
 
-        # wait for reactions -> default should 10, debugging is 1 (in minutes) | param at the top of file
-        time.sleep(wait_time)
+            # check if there was an interaction -> if there was, stop waiting
+            if max(vid_info) > 0:
+                break
+
+            # wait for reactions -> default should 10, debugging is 1 (in minutes) | param at the top of file
+            time.sleep(wait_time)
 
         # get the latest video information [likes, comments, shares]
         vid_info = get_latest_vid_info(channel_url)
 
         # if can't retrieve info after 200 seconds
         if vid_info is False:
-            input('Waiting... Retrieving Video Info failed')
+            input(get_current_time_str() + ': Waiting... Retrieving Video Info failed')
+
+        # after info has been fetched
+        ignore_upload = False
 
     # get the movement code from video info
     move = get_movement_from_info(vid_info)

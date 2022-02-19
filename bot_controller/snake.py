@@ -3,11 +3,12 @@ import copy
 
 class Snake:
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, state_path):
 
         # the size of the word
         self.width = width
         self.height = height
+        self.state_path = state_path
 
         # some parameters -> position = [y,x]
         self.high_score = None
@@ -16,7 +17,7 @@ class Snake:
         self.direction = None
 
     # starting the game
-    def start_game(self):
+    def start_game(self, load_from_state = False):
 
         # print
         print('Game started')
@@ -30,12 +31,54 @@ class Snake:
         except:
             print('No score file found.')
 
-        # reset game
-        self.reset_game()
+        if load_from_state:
+            self.load_state()
+        else:
+            self.reset_game()
 
         # returns high score
         self.high_score = score
         return score
+
+    # load from a previous state
+    def load_state(self):
+
+        # load file
+        try:
+            file = open(self.state_path, 'r')
+        except:
+            print('Unable to load file')
+            return False
+
+        # FIXME: block size load better
+        world_size = file.readline()
+
+        # high score
+        high_score = file.readline()
+
+        # direction
+        self.direction = int(file.readline())
+
+        # food
+        food = file.readline().split(',')
+        self.food = [int(food[1]), int(food[0])]
+
+        # snake
+        self.snake = []
+        snake = file.readline().split(';')
+        for s in snake:
+
+            # position
+            p = s.split(',')
+            p = [int(p[1]), int(p[0])]
+
+            # add position
+            self.snake.append(p)
+
+        # close file and return
+        file.close()
+        print('load complete')
+        return True
 
     # ends game
     def end_game(self):
@@ -169,7 +212,7 @@ class Snake:
         self.snake.append(tail)
 
     # create state
-    def save_state(self, path):
+    def save_state(self):
 
         # create snake state
         s_state = ''
@@ -185,7 +228,7 @@ class Snake:
                 s_state += ';'
 
         # save state to file
-        file = open(path, 'w')
+        file = open(self.state_path, 'w')
         file.write(str(self.width) + '\n' + str(self.high_score) + '\n' + str(self.direction) + '\n' + str(self.food[1]) + ',' + str(self.food[0]) + '\n' + s_state)
         file.close()
 
